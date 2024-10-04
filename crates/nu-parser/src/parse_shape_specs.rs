@@ -1,5 +1,7 @@
-use crate::{lex::lex_signature, parser::parse_value, trim_quotes, TokenContents};
-use nu_protocol::{engine::StateWorkingSet, ParseError, Span, SyntaxShape, Type};
+use crate::{
+    lex::lex_signature, parse_expression, parser::parse_value, trim_quotes, TokenContents,
+};
+use nu_protocol::{ast::Expr, engine::StateWorkingSet, ParseError, Span, SyntaxShape, Type};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShapeDescriptorUse {
@@ -103,6 +105,16 @@ pub fn parse_shape_name(
 
                 if let Some(decl_id) = working_set.find_decl(cmd_name) {
                     return SyntaxShape::CompleterWrapper(Box::new(shape), decl_id);
+                } else if let Expr::FullCellPath(fcp) =
+                    parse_expression(working_set, &[cmd_span]).expr
+                {
+                    if let Expr::List(_) = &fcp.head.expr {
+                        return SyntaxShape::CompleterWrapperList(
+                            Box::new(shape),
+                            Box::new(fcp.head.clone()),
+                        );
+                    }
+                    return shape;
                 } else {
                     working_set.error(ParseError::UnknownCommand(cmd_span));
                     return shape;

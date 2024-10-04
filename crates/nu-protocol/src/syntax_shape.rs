@@ -1,3 +1,4 @@
+use crate::ast::Expression;
 use crate::{DeclId, Type};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -9,7 +10,7 @@ use std::fmt::Display;
 /// e.g. [`SyntaxShape::GlobPattern`]/[`SyntaxShape::Filepath`] serve the completer,
 /// but don't have an associated [`Value`](crate::Value)
 /// There are additional `SyntaxShape`s that only make sense in particular expressions or keywords
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SyntaxShape {
     /// Any syntactic form is allowed
     Any,
@@ -32,6 +33,7 @@ pub enum SyntaxShape {
     /// A [`SyntaxShape`] with custom completion logic
     CompleterWrapper(Box<SyntaxShape>, DeclId),
 
+    CompleterWrapperList(Box<SyntaxShape>, Box<Expression>),
     /// A datetime value, eg `2022-02-02` or `2019-10-12T07:20:50.52+00:00`
     DateTime,
 
@@ -148,6 +150,7 @@ impl SyntaxShape {
             SyntaxShape::Binary => Type::Binary,
             SyntaxShape::CellPath => Type::Any,
             SyntaxShape::CompleterWrapper(inner, _) => inner.to_type(),
+            SyntaxShape::CompleterWrapperList(inner, _) => inner.to_type(),
             SyntaxShape::DateTime => Type::Date,
             SyntaxShape::Duration => Type::Duration,
             SyntaxShape::Expression => Type::Any,
@@ -249,6 +252,7 @@ impl Display for SyntaxShape {
             SyntaxShape::Boolean => write!(f, "bool"),
             SyntaxShape::Error => write!(f, "error"),
             SyntaxShape::CompleterWrapper(x, _) => write!(f, "completable<{x}>"),
+            SyntaxShape::CompleterWrapperList(x, _) => write!(f, "completable<{x}>"),
             SyntaxShape::OneOf(list) => {
                 let arg_vec: Vec<_> = list.iter().map(|x| x.to_string()).collect();
                 let arg_string = arg_vec.join(", ");

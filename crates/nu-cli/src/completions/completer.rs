@@ -276,10 +276,10 @@ impl NuCompleter {
 
                         // Match other types
                         match &flat.1 {
-                            FlatShape::Custom(decl_id) => {
+                            FlatShape::Custom(completer) => {
                                 let mut completer = CustomCompletion::new(
                                     self.stack.clone(),
-                                    *decl_id,
+                                    completer.clone(),
                                     initial_line,
                                 );
 

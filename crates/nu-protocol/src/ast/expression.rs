@@ -8,6 +8,13 @@ use std::sync::Arc;
 
 use super::ListItem;
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ExpressionCustomCompletion {
+    Function(DeclId),
+    List(Box<Expression>),
+    None,
+}
+
 /// Wrapper around [`Expr`]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Expression {
@@ -15,7 +22,7 @@ pub struct Expression {
     pub span: Span,
     pub span_id: SpanId,
     pub ty: Type,
-    pub custom_completion: Option<DeclId>,
+    pub custom_completion: ExpressionCustomCompletion,
 }
 
 impl Expression {
@@ -26,7 +33,7 @@ impl Expression {
             span,
             span_id,
             ty: Type::Any,
-            custom_completion: None,
+            custom_completion: ExpressionCustomCompletion::None,
         }
     }
 
@@ -566,7 +573,7 @@ impl Expression {
             span,
             span_id,
             ty,
-            custom_completion: None,
+            custom_completion: ExpressionCustomCompletion::None,
         }
     }
 
@@ -576,7 +583,7 @@ impl Expression {
             span,
             span_id,
             ty,
-            custom_completion: None,
+            custom_completion: ExpressionCustomCompletion::None,
         }
     }
 
@@ -586,7 +593,7 @@ impl Expression {
             span,
             span_id: SpanId::new(0),
             ty,
-            custom_completion: None,
+            custom_completion: ExpressionCustomCompletion::None,
         }
     }
 

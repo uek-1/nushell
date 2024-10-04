@@ -1,22 +1,22 @@
 use nu_protocol::{
     ast::{
-        Argument, Block, Expr, Expression, ExternalArgument, ImportPatternMember, ListItem,
-        MatchPattern, PathMember, Pattern, Pipeline, PipelineElement, PipelineRedirection,
-        RecordItem,
+        Argument, Block, Expr, Expression, ExpressionCustomCompletion, ExternalArgument,
+        ImportPatternMember, ListItem, MatchPattern, PathMember, Pattern, Pipeline,
+        PipelineElement, PipelineRedirection, RecordItem,
     },
     engine::StateWorkingSet,
     DeclId, Span, SyntaxShape, VarId,
 };
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Debug, Eq, PartialEq, Ord, Clone, PartialOrd)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FlatShape {
     And,
     Binary,
     Block,
     Bool,
     Closure,
-    Custom(DeclId),
+    Custom(ExpressionCustomCompletion),
     DateTime,
     Directory,
     External,
@@ -187,8 +187,17 @@ fn flatten_expression_into(
     expr: &Expression,
     output: &mut Vec<(Span, FlatShape)>,
 ) {
-    if let Some(custom_completion) = &expr.custom_completion {
-        output.push((expr.span, FlatShape::Custom(*custom_completion)));
+    if let ExpressionCustomCompletion::Function(custom_completion) = &expr.custom_completion {
+        output.push((
+            expr.span,
+            FlatShape::Custom(ExpressionCustomCompletion::Function(*custom_completion)),
+        ));
+        return;
+    } else if let ExpressionCustomCompletion::List(list) = &expr.custom_completion {
+        output.push((
+            expr.span,
+            FlatShape::Custom(ExpressionCustomCompletion::List(list.to_owned())),
+        ));
         return;
     }
 
@@ -319,7 +328,7 @@ fn flatten_expression_into(
                 }
             }
             // sort these since flags and positional args can be intermixed
-            output[arg_start..].sort();
+            // output[arg_start..].sort();
         }
         Expr::ExternalCall(head, args) => {
             if let Expr::String(..) | Expr::GlobPattern(..) = &head.expr {
